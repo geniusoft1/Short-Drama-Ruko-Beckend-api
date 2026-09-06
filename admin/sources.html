@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sources — Ruko Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="sidebar-logo">
+          <div class="logo-icon">🎬</div>
+          <div><div class="logo-text">Ruko</div><div class="logo-badge">ADMIN</div></div>
+        </a>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Main</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="sources.html" class="nav-item active"><span class="nav-icon">🌐</span> Sources</a>
+        <a href="dramas.html" class="nav-item"><span class="nav-icon">🎭</span> Dramas</a>
+        <a href="episodes.html" class="nav-item"><span class="nav-icon">📺</span> Episodes</a>
+        <a href="downloads.html" class="nav-item"><span class="nav-icon">📥</span> Downloads</a>
+        <div class="nav-section-label" style="margin-top:16px">Settings</div>
+        <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+        <a href="api-keys.html" class="nav-item"><span class="nav-icon">🔑</span> API Keys</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-info">
+          <div class="admin-avatar" id="admin-avatar">A</div>
+          <div><div class="admin-name" id="admin-username">Admin</div><div class="admin-role" id="admin-role">Super Admin</div></div>
+        </div>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-title">
+          <h1>🌐 Drama Sources</h1>
+          <p>Manage API integrations and web scrapers</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary" onclick="syncAll()">🔄 Sync All Enabled</button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Info Banner -->
+        <div class="card" style="margin-bottom: 24px; border-color: rgba(124,58,237,0.3); background: rgba(124,58,237,0.05);">
+          <div style="display: flex; gap: 16px; align-items: flex-start;">
+            <span style="font-size: 28px;">💡</span>
+            <div>
+              <div style="font-weight: 700; margin-bottom: 6px;">How Sources Work</div>
+              <div style="font-size: 13px; color: var(--text-muted); line-height: 1.7;">
+                Enable a source, then click <strong>Sync</strong> to fetch dramas into your database. The <strong>Mock</strong> source has built-in demo data and works immediately. 
+                For <strong>Sansekai</strong>, sync happens slowly in the background to respect their rate limits.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Queue Status Banner -->
+        <div class="card" id="queue-status-card" style="margin-bottom: 24px; display: none; align-items: center; justify-content: space-between; border-color: var(--primary);">
+          <div>
+            <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+              <span class="spinner" style="width:16px; height:16px; border-width:2px; display:inline-block;"></span>
+              Background Sync in Progress
+            </div>
+            <div style="font-size: 13px; color: var(--text-muted);" id="queue-stats-text">
+              Pending: 0 | Processing: 0 | Completed: 0 | Failed: 0
+            </div>
+          </div>
+          <div style="font-size: 24px;">🔄</div>
+        </div>
+
+        <div class="source-grid" id="sources-grid">
+          <div style="grid-column: 1/-1; color: var(--text-muted); padding: 40px; text-align: center;">
+            <div class="spinner" style="margin: auto;"></div>
+            <p style="margin-top: 12px;">Loading sources...</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Config Modal -->
+  <div class="modal-overlay" id="config-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modal-source-name">Configure Source</div>
+        <button class="modal-close" onclick="closeModal('config-modal')">✕</button>
+      </div>
+      <form id="config-form">
+        <input type="hidden" id="modal-source-id">
+        
+        <div id="api-key-section">
+          <div class="form-group">
+            <label class="form-label">API Key (if required)</label>
+            <input type="text" id="modal-api-key" class="form-control" placeholder="Enter API key...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Proxy URL (Optional)</label>
+            <input type="text" id="modal-proxy-url" class="form-control" placeholder="http://user:pass@ip:port or socks5://...">
+          </div>
+        </div>
+
+        <div style="background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+          <div style="font-size: 13px; color: var(--text-muted);" id="modal-source-desc"></div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn btn-primary" style="flex:1">💾 Save Config</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('config-modal')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    initSidebar();
+    let sources = [];
+
+    async function loadSources() {
+      try {
+        const res = await api.getSources();
+        sources = res.data;
+        renderSources();
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    }
+
+    function renderSources() {
+      const grid = document.getElementById('sources-grid');
+      if (!sources.length) {
+        grid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🌐</div><h3>No sources found</h3></div>';
+        return;
+      }
+
+      const typeLabels = { mock: '🧪 Demo Data', api: '🔌 Paid API', scraper: '🕷️ Web Scraper' };
+      const typeColors = { mock: 'badge-success', api: 'badge-primary', scraper: 'badge-info' };
+
+      grid.innerHTML = sources.map(src => `
+        <div class="source-card" id="source-card-${src.id}">
+          <div class="source-card-header">
+            <div class="source-logo">
+              ${src.logo && src.logo.startsWith('http') 
+                ? `<img src="${src.logo}" alt="${src.name}" onerror="this.parentElement.textContent='🌐'">` 
+                : (src.slug === 'mock' ? '🧪' : src.slug === 'reelapi' ? '🎬' : '🌐')}
+            </div>
+            <div>
+              <div class="source-name">${src.name}</div>
+              <div class="source-type"><span class="badge ${typeColors[src.type] || 'badge-secondary'}">${typeLabels[src.type] || src.type}</span></div>
+            </div>
+            <div style="margin-left: auto;">
+              <label class="toggle">
+                <input type="checkbox" ${src.is_enabled ? 'checked' : ''} onchange="toggleSource(${src.id}, this.checked)">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="source-desc">${src.description || ''}</div>
+
+          <div class="source-meta">
+            <span>📦 ${src.total_dramas || 0} dramas</span>
+            <span>Last sync: ${src.last_sync ? formatDate(src.last_sync) : 'Never'}</span>
+          </div>
+
+          <div style="margin: 12px 0;">
+            ${statusBadge(src.sync_status || 'never')}
+          </div>
+
+          <div class="source-actions">
+            <button class="btn btn-secondary btn-sm" style="flex:1" onclick="openConfig(${src.id})">⚙️ Config</button>
+            <button class="btn btn-primary btn-sm" style="flex:1" onclick="syncOne(${src.id}, this)" ${!src.is_enabled ? 'disabled' : ''}>🔄 Sync</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function toggleSource(id, enabled) {
+      try {
+        await api.updateSource(id, { is_enabled: enabled });
+        const src = sources.find(s => s.id === id);
+        if (src) src.is_enabled = enabled ? 1 : 0;
+        toast(`Source ${enabled ? 'enabled' : 'disabled'}`, 'success');
+        renderSources();
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    }
+
+    async function syncOne(id, btn) {
+      setLoading(btn, true);
+      try {
+        await api.syncSource(id);
+        toast('Sync started! Check Dashboard for progress.', 'info');
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+      setTimeout(() => { setLoading(btn, false); loadSources(); }, 3000);
+    }
+
+    async function syncAll() {
+      try {
+        await api.syncAll();
+        toast('Syncing all enabled sources in background!', 'info');
+        setTimeout(loadSources, 5000);
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    }
+
+    function openConfig(id) {
+      const src = sources.find(s => s.id === id);
+      if (!src) return;
+      document.getElementById('modal-source-id').value = id;
+      document.getElementById('modal-source-name').textContent = `⚙️ Configure ${src.name}`;
+      document.getElementById('modal-api-key').value = src.api_key || '';
+      
+      let proxyVal = '';
+      if (src.config) {
+        try {
+          const config = JSON.parse(src.config);
+          if (config.proxy) proxyVal = config.proxy;
+        } catch(e){}
+      }
+      document.getElementById('modal-proxy-url').value = proxyVal;
+      
+      document.getElementById('modal-source-desc').textContent = src.description || '';
+      
+      // Always show API key section in case users need to override things
+      document.getElementById('api-key-section').style.display = 'block';
+      
+      openModal('config-modal');
+    }
+
+    document.getElementById('config-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('modal-source-id').value;
+      const apiKey = document.getElementById('modal-api-key').value.trim();
+      const proxyUrl = document.getElementById('modal-proxy-url').value.trim();
+      
+      const configObj = { proxy: proxyUrl || null };
+      
+      try {
+        await api.updateSource(id, { api_key: apiKey || null, config: JSON.stringify(configObj) });
+        toast('Configuration saved!', 'success');
+        closeModal('config-modal');
+        loadSources();
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    });
+
+    async function pollQueueStats() {
+      try {
+        const res = await api.getQueueStats();
+        const stats = res.data;
+        const totalActive = stats.pending + stats.processing;
+        
+        const card = document.getElementById('queue-status-card');
+        const text = document.getElementById('queue-stats-text');
+        
+        if (totalActive > 0 || stats.completed > 0 || stats.failed > 0) {
+          card.style.display = 'flex';
+          text.innerHTML = `Pending: <strong>${stats.pending}</strong> &nbsp;|&nbsp; Processing: <strong>${stats.processing}</strong> &nbsp;|&nbsp; Completed: <strong>${stats.completed}</strong> &nbsp;|&nbsp; Failed: <strong>${stats.failed}</strong>`;
+        } else {
+          card.style.display = 'none';
+        }
+      } catch (err) {
+        console.error('Queue poll failed', err);
+      }
+    }
+
+    loadSources();
+    pollQueueStats();
+    setInterval(pollQueueStats, 5000);
+  </script>
+</body>
+</html>

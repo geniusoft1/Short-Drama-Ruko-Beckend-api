@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Downloads — Ruko Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: var(--bg-elevated);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: var(--primary);
+      transition: width 0.3s ease;
+    }
+    .progress-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .drama-title-cell { display: flex; align-items: center; gap: 12px; }
+    .drama-title-cell img { width: 40px; height: 56px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: var(--bg-elevated); }
+    .drama-title-cell .name { font-weight: 600; font-size: 14px; color: var(--text-primary); }
+    .drama-title-cell .source { font-size: 11px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="sidebar-logo">
+          <div class="logo-icon">🎬</div>
+          <div><div class="logo-text">Ruko</div><div class="logo-badge">ADMIN</div></div>
+        </a>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Main</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="sources.html" class="nav-item"><span class="nav-icon">🌐</span> Sources</a>
+        <a href="dramas.html" class="nav-item"><span class="nav-icon">🎭</span> Dramas</a>
+        <a href="episodes.html" class="nav-item"><span class="nav-icon">📺</span> Episodes</a>
+        <a href="downloads.html" class="nav-item active"><span class="nav-icon">📥</span> Downloads</a>
+        <div class="nav-section-label" style="margin-top:16px">Settings</div>
+        <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+        <a href="api-keys.html" class="nav-item"><span class="nav-icon">🔑</span> API Keys</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-info">
+          <div class="admin-avatar" id="admin-avatar">A</div>
+          <div><div class="admin-name" id="admin-username">Admin</div><div class="admin-role" id="admin-role">Super Admin</div></div>
+        </div>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-title">
+          <h1>📥 Downloads Manager</h1>
+          <p>Track progress of dramas downloading to your Bunny Storage</p>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Drama</th>
+                  <th style="width: 30%;">Progress</th>
+                  <th>Status</th>
+                  <th>Last Updated</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="downloads-tbody">
+                <tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">Loading downloads...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    initSidebar();
+    let pollInterval;
+
+    async function loadDownloads() {
+      try {
+        const res = await api.get('/admin/downloads');
+        const downloads = res.data;
+        const tbody = document.getElementById('downloads-tbody');
+        
+        if (!downloads.length) {
+          tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">📥</div><h3>No downloads found</h3><p>Click "Download" on a drama to start tracking it here</p></div></td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = downloads.map(d => {
+          let statusBadge = '';
+          if (d.status === 'downloading') statusBadge = '<span class="badge badge-info">Downloading...</span>';
+          else if (d.status === 'completed') statusBadge = '<span class="badge badge-success">Completed</span>';
+          else if (d.status === 'failed') statusBadge = '<span class="badge badge-danger">Failed</span>';
+          else statusBadge = '<span class="badge badge-secondary">Pending</span>';
+
+          const progressColor = d.status === 'failed' ? 'var(--danger)' : (d.status === 'completed' ? 'var(--success)' : 'var(--primary)');
+
+          return `
+            <tr>
+              <td>
+                <div class="drama-title-cell">
+                  <img src="${d.drama_poster || ''}" alt="" onerror="this.style.display='none'">
+                  <div>
+                    <div class="name">${d.drama_title}</div>
+                    ${d.status === 'failed' && d.error_message ? `<div style="font-size: 11px; color: var(--danger); margin-top: 4px; max-width: 250px;">Error: ${d.error_message}</div>` : ''}
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="width: 100%; max-width: 300px;">
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: ${d.progress}%; background: ${progressColor};"></div>
+                  </div>
+                  <div class="progress-text">
+                    <span>${d.current_episode} / ${d.total_episodes} episodes</span>
+                    <span>${d.progress}%</span>
+                  </div>
+                </div>
+              </td>
+              <td>${statusBadge}</td>
+              <td style="font-size: 12px; color: var(--text-muted);">${formatDate(d.updated_at)}</td>
+              <td>
+                <button class="btn btn-danger btn-sm" onclick="removeDownload(${d.id})">✕ Remove</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function removeDownload(id) {
+      if (!confirm('Remove this download record? (This will not delete the actual video files)')) return;
+      try {
+        await api.delete('/admin/downloads/' + id);
+        toast('Record removed', 'success');
+        loadDownloads();
+      } catch (err) {
+        toast('Failed to remove', 'error');
+      }
+    }
+
+    // Initial load
+    loadDownloads();
+    
+    // Auto-refresh every 5 seconds
+    pollInterval = setInterval(loadDownloads, 5000);
+  </script>
+</body>
+</html>

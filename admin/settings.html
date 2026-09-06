@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — Ruko Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .settings-form { max-width: 600px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="sidebar-logo">
+          <div class="logo-icon">🎬</div>
+          <div><div class="logo-text">Ruko</div><div class="logo-badge">ADMIN</div></div>
+        </a>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Main</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="sources.html" class="nav-item"><span class="nav-icon">🌐</span> Sources</a>
+        <a href="dramas.html" class="nav-item"><span class="nav-icon">🎭</span> Dramas</a>
+        <a href="episodes.html" class="nav-item"><span class="nav-icon">📺</span> Episodes</a>
+        <a href="downloads.html" class="nav-item"><span class="nav-icon">📥</span> Downloads</a>
+        <div class="nav-section-label" style="margin-top:16px">Settings</div>
+        <a href="settings.html" class="nav-item active"><span class="nav-icon">⚙️</span> Settings</a>
+        <a href="api-keys.html" class="nav-item"><span class="nav-icon">🔑</span> API Keys</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-info">
+          <div class="admin-avatar" id="admin-avatar">A</div>
+          <div><div class="admin-name" id="admin-username">Admin</div><div class="admin-role" id="admin-role">Super Admin</div></div>
+        </div>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-title">
+          <h1>⚙️ Settings</h1>
+          <p>Configure BunnyCDN and global system settings</p>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <div class="card settings-form">
+          <div class="card-header">
+            <span class="card-title">🐰 BunnyCDN Storage Configuration</span>
+          </div>
+          <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">
+            Configure your Bunny Storage credentials below. This allows you to download scraped streams and host them physically on your own CDN for "lifetime" links.
+          </p>
+          <form id="bunnySettingsForm">
+            <div class="form-group">
+              <label class="form-label">Storage Zone Name</label>
+              <input type="text" class="form-control" id="bunny_storage_zone" placeholder="e.g. my-ruko-dramas">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Access Key (Password)</label>
+              <input type="password" class="form-control" id="bunny_access_key" placeholder="Bunny Storage Password">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Pull Zone Domain</label>
+              <input type="text" class="form-control" id="bunny_pull_zone" placeholder="e.g. my-ruko-dramas.b-cdn.net">
+            </div>
+            <button type="submit" class="btn btn-primary" id="save-settings-btn">💾 Save Settings</button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    initSidebar();
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const res = await api.get('/admin/settings');
+            if (res.success) {
+                document.getElementById('bunny_storage_zone').value = res.data.bunny_storage_zone || '';
+                document.getElementById('bunny_access_key').value = res.data.bunny_access_key || '';
+                document.getElementById('bunny_pull_zone').value = res.data.bunny_pull_zone || '';
+            }
+        } catch (err) {
+            console.error('Failed to load settings', err);
+        }
+    });
+
+    document.getElementById('bunnySettingsForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('save-settings-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = 'Saving...';
+        btn.disabled = true;
+
+        const payload = {
+            bunny_storage_zone: document.getElementById('bunny_storage_zone').value,
+            bunny_access_key: document.getElementById('bunny_access_key').value,
+            bunny_pull_zone: document.getElementById('bunny_pull_zone').value
+        };
+
+        try {
+            const res = await api.post('/admin/settings', payload);
+            if (res.success) {
+                toast('Settings saved successfully!', 'success');
+            } else {
+                toast('Error: ' + res.message, 'error');
+            }
+        } catch (err) {
+            toast('Request failed', 'error');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+  </script>
+</body>
+</html>

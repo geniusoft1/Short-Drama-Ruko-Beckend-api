@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Ruko Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .sync-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .sync-item:last-child { border-bottom: none; }
+    .sync-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .sync-dot.success { background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .sync-dot.failed { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+    .sync-dot.running { background: var(--warning); box-shadow: 0 0 8px var(--warning); animation: pulse 1s infinite; }
+    .sync-dot.never { background: var(--text-muted); }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .source-health-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .source-health-row:last-child { border-bottom: none; }
+    .health-indicator { display: flex; align-items: center; gap: 8px; }
+    .health-dot { width: 10px; height: 10px; border-radius: 50%; }
+    @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="sidebar-logo">
+          <div class="logo-icon">🎬</div>
+          <div>
+            <div class="logo-text">Ruko</div>
+            <div class="logo-badge">ADMIN</div>
+          </div>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Main</div>
+        <a href="dashboard.html" class="nav-item" id="nav-dashboard">
+          <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a href="sources.html" class="nav-item" id="nav-sources">
+          <span class="nav-icon">🌐</span> Sources
+        </a>
+        <a href="dramas.html" class="nav-item" id="nav-dramas">
+          <span class="nav-icon">🎭</span> Dramas
+        </a>
+        <a href="episodes.html" class="nav-item" id="nav-episodes">
+          <span class="nav-icon">📺</span> Episodes
+        </a>
+
+        <div class="nav-section-label" style="margin-top: 16px;">Settings</div>
+        <a href="api-keys.html" class="nav-item" id="nav-apikeys">
+          <span class="nav-icon">🔑</span> API Keys
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="admin-info">
+          <div class="admin-avatar" id="admin-avatar">A</div>
+          <div>
+            <div class="admin-name" id="admin-username">Admin</div>
+            <div class="admin-role" id="admin-role">Super Admin</div>
+          </div>
+        </div>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-title">
+          <h1>📊 Dashboard</h1>
+          <p>Overview of your drama platform</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary" id="sync-all-btn" onclick="syncAll()">
+            🔄 Sync All Sources
+          </button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Stats Cards -->
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card" style="--stat-color: var(--primary); --stat-bg: rgba(124,58,237,0.12)">
+            <div class="stat-icon">🎭</div>
+            <div class="stat-value" id="stat-dramas">—</div>
+            <div class="stat-label">Total Dramas</div>
+          </div>
+          <div class="stat-card" style="--stat-color: var(--accent); --stat-bg: rgba(6,182,212,0.12)">
+            <div class="stat-icon">📺</div>
+            <div class="stat-value" id="stat-episodes">—</div>
+            <div class="stat-label">Total Episodes</div>
+          </div>
+          <div class="stat-card" style="--stat-color: var(--success); --stat-bg: rgba(16,185,129,0.12)">
+            <div class="stat-icon">🌐</div>
+            <div class="stat-value" id="stat-sources">—</div>
+            <div class="stat-label">Active Sources</div>
+          </div>
+          <div class="stat-card" style="--stat-color: var(--warning); --stat-bg: rgba(245,158,11,0.12)">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-value" id="stat-requests">—</div>
+            <div class="stat-label">API Requests</div>
+          </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid-2" style="margin-bottom: 24px;">
+          <!-- Source Health -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">🌐 Source Health</span>
+              <a href="sources.html" class="btn btn-secondary btn-sm">Manage</a>
+            </div>
+            <div id="source-health-list">
+              <div style="color: var(--text-muted); font-size: 14px;">Loading...</div>
+            </div>
+          </div>
+
+          <!-- Recent Syncs -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">🔄 Recent Syncs</span>
+            </div>
+            <div id="recent-syncs-list">
+              <div style="color: var(--text-muted); font-size: 14px;">Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">⚡ Quick Actions</span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+            <a href="sources.html" class="btn btn-secondary">🌐 Manage Sources</a>
+            <a href="dramas.html" class="btn btn-secondary">🎭 Browse Dramas</a>
+            <a href="api-keys.html" class="btn btn-secondary">🔑 API Keys</a>
+            <a href="/api" target="_blank" class="btn btn-secondary">📡 View API Docs</a>
+            <button class="btn btn-primary" onclick="syncAll()">🔄 Sync All</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    initSidebar();
+    document.getElementById('nav-dashboard').classList.add('active');
+
+    async function loadStats() {
+      try {
+        const res = await api.getStats();
+        const s = res.data;
+        document.getElementById('stat-dramas').textContent = formatNumber(s.total_dramas);
+        document.getElementById('stat-episodes').textContent = formatNumber(s.total_episodes);
+        document.getElementById('stat-sources').textContent = `${s.active_sources}/${s.total_sources}`;
+        document.getElementById('stat-requests').textContent = formatNumber(s.total_api_requests);
+
+        // Source health
+        const healthList = document.getElementById('source-health-list');
+        healthList.innerHTML = s.sources_health.map(src => `
+          <div class="source-health-row">
+            <div class="health-indicator">
+              <div class="health-dot" style="background: ${src.is_enabled ? (src.sync_status === 'success' ? 'var(--success)' : src.sync_status === 'failed' ? 'var(--danger)' : src.sync_status === 'running' ? 'var(--warning)' : 'var(--text-muted)') : 'var(--text-muted)'}; box-shadow: 0 0 6px ${src.is_enabled ? (src.sync_status === 'success' ? 'var(--success)' : 'var(--danger)') : 'none'}"></div>
+              <span style="font-size: 14px; font-weight: 500">${src.name}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 12px; color: var(--text-muted)">${src.total_dramas || 0} dramas</span>
+              ${src.is_enabled ? statusBadge(src.sync_status || 'never') : '<span class="badge badge-secondary">Disabled</span>'}
+            </div>
+          </div>
+        `).join('');
+
+        // Recent syncs
+        const syncsList = document.getElementById('recent-syncs-list');
+        if (!s.recent_syncs || s.recent_syncs.length === 0) {
+          syncsList.innerHTML = '<div class="empty-state"><p>No sync history yet. Enable a source and click Sync All.</p></div>';
+          return;
+        }
+        syncsList.innerHTML = s.recent_syncs.map(log => `
+          <div class="sync-item">
+            <div class="sync-dot ${log.status}"></div>
+            <div style="flex: 1">
+              <div style="font-size: 13px; font-weight: 600">${log.source_name}</div>
+              <div style="font-size: 11px; color: var(--text-muted)">${formatDate(log.started_at)}</div>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted)">+${log.dramas_added || 0} dramas</div>
+            ${statusBadge(log.status)}
+          </div>
+        `).join('');
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    }
+
+    async function syncAll() {
+      const btn = document.getElementById('sync-all-btn');
+      setLoading(btn, true);
+      try {
+        await api.syncAll();
+        toast('Sync started for all enabled sources! This runs in background.', 'info');
+        setTimeout(() => { loadStats(); setLoading(btn, false); }, 3000);
+      } catch (err) {
+        toast(err.message, 'error');
+        setLoading(btn, false);
+      }
+    }
+
+    loadStats();
+    // Auto-refresh every 30 seconds
+    setInterval(loadStats, 30000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ruko Admin — Login</title>
+  <meta name="description" content="Ruko Short Drama Admin Panel Login">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+      animation: fadeUp 0.5s ease;
+    }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    .login-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 36px;
+    }
+
+    .login-logo-icon {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      margin-bottom: 16px;
+      box-shadow: 0 0 40px var(--primary-glow), 0 0 80px rgba(124, 58, 237, 0.1);
+    }
+
+    .login-logo h1 {
+      font-size: 32px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, var(--text-accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -1px;
+    }
+
+    .login-logo p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+    }
+
+    .login-card h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .login-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+    }
+
+    .input-icon-wrap {
+      position: relative;
+    }
+
+    .input-icon-wrap .input-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      opacity: 0.5;
+    }
+
+    .input-icon-wrap .form-control {
+      padding-left: 42px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    }
+
+    .password-toggle:hover { opacity: 1; }
+
+    .login-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 15px;
+      justify-content: center;
+      margin-top: 8px;
+      border-radius: 12px;
+    }
+
+    .error-msg {
+      display: none;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .error-msg.show { display: block; }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    
+    /* Floating particles background */
+    .bg-particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: -1;
+    }
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--primary);
+      opacity: 0;
+      animation: float linear infinite;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(100vh) scale(0); opacity: 0; }
+      10% { opacity: 0.4; }
+      90% { opacity: 0.4; }
+      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated particles -->
+  <div class="bg-particles" id="particles"></div>
+
+  <div class="login-container">
+    <div class="login-logo">
+      <div class="login-logo-icon">🎬</div>
+      <h1>Ruko Admin</h1>
+      <p>Short Drama Management System</p>
+    </div>
+
+    <div class="login-card">
+      <h2>Welcome back 👋</h2>
+      <p>Sign in to manage your drama content</p>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">👤</span>
+            <input 
+              type="text" 
+              id="username" 
+              class="form-control" 
+              placeholder="Enter your username"
+              autocomplete="username"
+              required
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">🔒</span>
+            <input 
+              type="password" 
+              id="password" 
+              class="form-control" 
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              required
+            >
+            <button type="button" class="password-toggle" id="pwd-toggle" onclick="togglePassword()">👁️</button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary login-btn" id="login-btn">
+          Sign In →
+        </button>
+
+        <div class="error-msg" id="error-msg"></div>
+      </form>
+    </div>
+
+    <div class="login-footer">
+      🔐 Secured with JWT Authentication &bull; Ruko Admin v1.0
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Redirect if already logged in
+    if (localStorage.getItem('ruko_token')) {
+      window.location.href = '/admin/dashboard.html';
+    }
+
+    // Password toggle
+    function togglePassword() {
+      const input = document.getElementById('password');
+      const btn = document.getElementById('pwd-toggle');
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+      }
+    }
+
+    // Login form
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const errorEl = document.getElementById('error-msg');
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      errorEl.classList.remove('show');
+      btn.innerHTML = '<span class="spinner"></span> Signing in...';
+      btn.disabled = true;
+
+      try {
+        const res = await api.login(username, password);
+        localStorage.setItem('ruko_token', res.token);
+        localStorage.setItem('ruko_admin', JSON.stringify(res.admin));
+        btn.innerHTML = '✅ Success! Redirecting...';
+        setTimeout(() => window.location.href = '/admin/dashboard.html', 600);
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add('show');
+        btn.innerHTML = 'Sign In →';
+        btn.disabled = false;
+      }
+    });
+
+    // Generate background particles
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 20; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.cssText = `
+        left: ${Math.random() * 100}%;
+        width: ${Math.random() * 4 + 2}px;
+        height: ${Math.random() * 4 + 2}px;
+        animation-duration: ${Math.random() * 15 + 10}s;
+        animation-delay: ${Math.random() * 10}s;
+        opacity: ${Math.random() * 0.5};
+        background: ${Math.random() > 0.5 ? 'var(--primary)' : 'var(--accent)'};
+      `;
+      container.appendChild(p);
+    }
+  </script>
+</body>
+</html>

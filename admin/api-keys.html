@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Keys — Ruko Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="sidebar-logo">
+          <div class="logo-icon">🎬</div>
+          <div><div class="logo-text">Ruko</div><div class="logo-badge">ADMIN</div></div>
+        </a>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Main</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="sources.html" class="nav-item"><span class="nav-icon">🌐</span> Sources</a>
+        <a href="dramas.html" class="nav-item"><span class="nav-icon">🎭</span> Dramas</a>
+        <a href="episodes.html" class="nav-item"><span class="nav-icon">📺</span> Episodes</a>
+        <a href="downloads.html" class="nav-item"><span class="nav-icon">📥</span> Downloads</a>
+        <div class="nav-section-label" style="margin-top:16px">Settings</div>
+        <a href="api-keys.html" class="nav-item active"><span class="nav-icon">🔑</span> API Keys</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-info">
+          <div class="admin-avatar" id="admin-avatar">A</div>
+          <div><div class="admin-name" id="admin-username">Admin</div><div class="admin-role" id="admin-role">Super Admin</div></div>
+        </div>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-title">
+          <h1>🔑 API Keys</h1>
+          <p>Manage access keys for the Ruko mobile app</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary" onclick="openModal('create-key-modal')">➕ Generate New Key</button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- How to use banner -->
+        <div class="card" style="margin-bottom: 24px; border-color: rgba(6,182,212,0.3); background: rgba(6,182,212,0.05);">
+          <div style="display: flex; gap: 14px;">
+            <span style="font-size: 28px;">📡</span>
+            <div>
+              <div style="font-weight: 700; margin-bottom: 8px;">How to use API Keys in your Ruko App</div>
+              <div style="font-size: 13px; color: var(--text-muted); line-height: 1.8;">
+                Add the key to every request as a header: <code class="font-mono" style="background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 5px; color: var(--accent-light);">x-api-key: ruko_your_key_here</code><br>
+                Base URL: <code class="font-mono" style="background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 5px; color: var(--accent-light);">http://your-server-ip:3000/api/v1/</code><br>
+                Example: <code class="font-mono" style="background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 5px; color: var(--accent-light);">GET /api/v1/websites</code> returns all active drama sources
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- API Endpoints Reference -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <span class="card-title">📡 API Endpoints Reference</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><span class="badge badge-success">GET</span></td><td class="font-mono" style="font-size:12px; color: var(--accent-light)">/api/v1/websites</td><td style="color: var(--text-muted); font-size: 13px;">All active drama sources</td></tr>
+                <tr><td><span class="badge badge-success">GET</span></td><td class="font-mono" style="font-size:12px; color: var(--accent-light)">/api/v1/website/:id/dramas</td><td style="color: var(--text-muted); font-size: 13px;">Dramas from a source (with pagination)</td></tr>
+                <tr><td><span class="badge badge-success">GET</span></td><td class="font-mono" style="font-size:12px; color: var(--accent-light)">/api/v1/drama/:id</td><td style="color: var(--text-muted); font-size: 13px;">Full drama details</td></tr>
+                <tr><td><span class="badge badge-success">GET</span></td><td class="font-mono" style="font-size:12px; color: var(--accent-light)">/api/v1/drama/:id/episodes</td><td style="color: var(--text-muted); font-size: 13px;">Episodes list</td></tr>
+                <tr><td><span class="badge badge-success">GET</span></td><td class="font-mono" style="font-size:12px; color: var(--accent-light)">/api/v1/episode/:id</td><td style="color: var(--text-muted); font-size: 13px;">Episode + stream links</td></tr>
+                <tr><td><span class="badge badge-success">GET</span></td><td class="font-mono" style="font-size:12px; color: var(--accent-light)">/api/v1/search?q=keyword</td><td style="color: var(--text-muted); font-size: 13px;">Global search</td></tr>
+                <tr><td><span class="badge badge-success">GET</span></td><td class="font-mono" style="font-size:12px; color: var(--accent-light)">/api/v1/trending</td><td style="color: var(--text-muted); font-size: 13px;">Top rated dramas</td></tr>
+                <tr><td><span class="badge badge-success">GET</span></td><td class="font-mono" style="font-size:12px; color: var(--accent-light)">/api/v1/latest</td><td style="color: var(--text-muted); font-size: 13px;">Most recently updated</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- API Keys Table -->
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <div style="padding: 20px; border-bottom: 1px solid var(--border);">
+            <div class="card-title">🔑 Active Keys</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Key</th>
+                  <th>Requests</th>
+                  <th>Last Used</th>
+                  <th>Created</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="keys-tbody">
+                <tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--text-muted);">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create Key Modal -->
+  <div class="modal-overlay" id="create-key-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">🔑 Generate API Key</div>
+        <button class="modal-close" onclick="closeModal('create-key-modal')">✕</button>
+      </div>
+      <form id="create-key-form">
+        <div class="form-group">
+          <label class="form-label">Key Name *</label>
+          <input type="text" id="key-name" class="form-control" placeholder="e.g., Ruko Mobile App" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <input type="text" id="key-desc" class="form-control" placeholder="What is this key for?">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Expires At (optional)</label>
+          <input type="date" id="key-expires" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary w-full">🔑 Generate Key</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Show New Key Modal -->
+  <div class="modal-overlay" id="show-key-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">✅ Key Generated!</div>
+        <button class="modal-close" onclick="closeModal('show-key-modal')">✕</button>
+      </div>
+      <div style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; padding: 14px; margin-bottom: 20px;">
+        <strong style="color: #f87171">⚠️ Save this key now!</strong>
+        <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">This key will not be shown again in full. Copy it immediately.</div>
+      </div>
+      <div class="api-key-display" style="margin-bottom: 16px;">
+        <div class="api-key-text" id="new-key-value"></div>
+        <button class="btn btn-secondary btn-sm" id="copy-key-btn" onclick="copyNewKey()">📋 Copy</button>
+      </div>
+      <button class="btn btn-primary w-full" onclick="closeModal('show-key-modal')">✅ I've saved it</button>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    initSidebar();
+
+    async function loadKeys() {
+      try {
+        const res = await api.getApiKeys();
+        const keys = res.data;
+        const tbody = document.getElementById('keys-tbody');
+        
+        if (!keys.length) {
+          tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">🔑</div><h3>No API keys yet</h3><p>Generate your first key to connect the Ruko app</p></div></td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = keys.map(k => `
+          <tr>
+            <td>
+              <div style="font-weight: 600">${k.name}</div>
+              <div style="font-size: 11px; color: var(--text-muted)">${k.description || ''}</div>
+            </td>
+            <td>
+              <div class="api-key-display" style="max-width: 200px;">
+                <span class="api-key-text">${k.key_value.substring(0, 20)}...${k.key_value.slice(-6)}</span>
+                <button class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="copyToClipboard('${k.key_value}', this)">📋</button>
+              </div>
+            </td>
+            <td><span class="badge badge-info">${formatNumber(k.requests_count)} req</span></td>
+            <td style="font-size: 12px; color: var(--text-muted)">${k.last_used ? formatDate(k.last_used) : 'Never'}</td>
+            <td style="font-size: 12px; color: var(--text-muted)">${formatDate(k.created_at)}</td>
+            <td>${k.is_active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Revoked</span>'}</td>
+            <td>
+              ${k.is_active ? `<button class="btn btn-danger btn-sm" onclick="revokeKey(${k.id})">🚫 Revoke</button>` : '<span class="text-muted">—</span>'}
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    }
+
+    document.getElementById('create-key-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const res = await api.createApiKey({
+          name: document.getElementById('key-name').value,
+          description: document.getElementById('key-desc').value,
+          expires_at: document.getElementById('key-expires').value || null,
+        });
+        closeModal('create-key-modal');
+        document.getElementById('create-key-form').reset();
+        
+        // Show the new key
+        document.getElementById('new-key-value').textContent = res.data.key_value;
+        openModal('show-key-modal');
+        loadKeys();
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    });
+
+    function copyNewKey() {
+      const key = document.getElementById('new-key-value').textContent;
+      copyToClipboard(key, document.getElementById('copy-key-btn'));
+    }
+
+    async function revokeKey(id) {
+      if (!confirm('Revoke this API key? The Ruko app will stop working until you add a new key.')) return;
+      try {
+        await api.revokeApiKey(id);
+        toast('API key revoked', 'warning');
+        loadKeys();
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    }
+
+    loadKeys();
+  </script>
+</body>
+</html>

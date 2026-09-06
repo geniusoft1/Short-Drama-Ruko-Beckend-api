@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Episodes — Ruko Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .stream-link { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent-light); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="sidebar-logo">
+          <div class="logo-icon">🎬</div>
+          <div><div class="logo-text">Ruko</div><div class="logo-badge">ADMIN</div></div>
+        </a>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Main</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="sources.html" class="nav-item"><span class="nav-icon">🌐</span> Sources</a>
+        <a href="dramas.html" class="nav-item"><span class="nav-icon">🎭</span> Dramas</a>
+        <a href="episodes.html" class="nav-item active"><span class="nav-icon">📺</span> Episodes</a>
+        <div class="nav-section-label" style="margin-top:16px">Settings</div>
+        <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+        <a href="api-keys.html" class="nav-item"><span class="nav-icon">🔑</span> API Keys</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-info">
+          <div class="admin-avatar" id="admin-avatar">A</div>
+          <div><div class="admin-name" id="admin-username">Admin</div><div class="admin-role" id="admin-role">Super Admin</div></div>
+        </div>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-title">
+          <h1>📺 Episodes</h1>
+          <p id="page-subtitle">Select a drama to manage its episodes</p>
+        </div>
+        <div class="topbar-actions">
+          <a href="dramas.html" class="btn btn-secondary">← Back to Dramas</a>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Drama Selector -->
+        <div class="card" style="margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <label class="form-label" style="margin: 0; white-space: nowrap">Select Drama:</label>
+            <div class="search-bar" style="flex: 1; min-width: 250px;">
+              <span>🎭</span>
+              <input type="text" id="drama-search" placeholder="Search and select a drama..." oninput="searchDramas()">
+            </div>
+          </div>
+          <div id="drama-suggestions" style="display: none; margin-top: 10px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden;"></div>
+          <div id="selected-drama" style="display: none; margin-top: 14px; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <img id="sel-poster" style="width:40px; height:56px; border-radius:6px; object-fit:cover;" src="" alt="">
+              <div>
+                <div id="sel-title" style="font-weight: 700;"></div>
+                <div id="sel-info" style="font-size: 12px; color: var(--text-muted);"></div>
+              </div>
+              <button class="btn btn-secondary btn-sm" style="margin-left: auto;" onclick="clearDrama()">✕ Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Episodes Table -->
+        <div class="card" style="padding: 0; overflow: hidden;" id="episodes-card">
+          <div style="padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+            <div class="card-title" id="ep-count">Select a drama above</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Title</th>
+                  <th>Thumbnail</th>
+                  <th>Duration</th>
+                  <th>Stream Links</th>
+                  <th>Active</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="episodes-tbody">
+                <tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📺</div><h3>Select a drama to view episodes</h3></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Edit Episode Modal -->
+  <div class="modal-overlay" id="edit-ep-modal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-title">✏️ Edit Episode</div>
+        <button class="modal-close" onclick="closeModal('edit-ep-modal')">✕</button>
+      </div>
+      <form id="edit-ep-form">
+        <input type="hidden" id="edit-ep-id">
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input type="text" id="edit-ep-title" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea id="edit-ep-desc" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Thumbnail URL</label>
+          <input type="url" id="edit-ep-thumb" class="form-control">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Stream Links</label>
+          <div id="streams-editor"></div>
+          <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 8px;" onclick="addStreamRow()">+ Add Stream Link</button>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full">💾 Save Episode</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    initSidebar();
+    let currentDramaId = null;
+    let searchTimeout;
+
+    // Check if drama ID is passed via URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const dramaIdFromUrl = urlParams.get('drama');
+
+    async function searchDramas() {
+      const q = document.getElementById('drama-search').value.trim();
+      if (q.length < 2) { hideSuggestions(); return; }
+
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(async () => {
+        try {
+          const res = await api.getDramas({ search: q, limit: 8 });
+          showSuggestions(res.data);
+        } catch {}
+      }, 300);
+    }
+
+    function showSuggestions(dramas) {
+      const el = document.getElementById('drama-suggestions');
+      if (!dramas.length) { el.style.display = 'none'; return; }
+      el.style.display = 'block';
+      el.innerHTML = dramas.map(d => `
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; transition: background 0.2s; border-bottom: 1px solid var(--border);"
+             onmouseenter="this.style.background='rgba(124,58,237,0.08)'" 
+             onmouseleave="this.style.background=''" 
+             onclick="selectDrama(${d.id}, '${d.title.replace(/'/g, "\\'")}', '${d.poster || ''}', ${d.total_episodes})">
+          <img src="${d.poster || ''}" style="width: 32px; height: 44px; border-radius: 5px; object-fit: cover; background: var(--bg-elevated);" onerror="this.style.display='none'">
+          <div>
+            <div style="font-size: 14px; font-weight: 600">${d.title}</div>
+            <div style="font-size: 11px; color: var(--text-muted)">${d.total_episodes} episodes • ${d.source_name || ''}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function hideSuggestions() {
+      document.getElementById('drama-suggestions').style.display = 'none';
+    }
+
+    function selectDrama(id, title, poster, episodes) {
+      currentDramaId = id;
+      hideSuggestions();
+      document.getElementById('drama-search').value = '';
+      
+      document.getElementById('sel-title').textContent = title;
+      document.getElementById('sel-info').textContent = `${episodes} episodes`;
+      document.getElementById('sel-poster').src = poster;
+      document.getElementById('selected-drama').style.display = 'block';
+      document.getElementById('page-subtitle').textContent = `Managing episodes for: ${title}`;
+      
+      loadEpisodes(id);
+    }
+
+    function clearDrama() {
+      currentDramaId = null;
+      document.getElementById('selected-drama').style.display = 'none';
+      document.getElementById('page-subtitle').textContent = 'Select a drama to manage its episodes';
+      document.getElementById('ep-count').textContent = 'Select a drama above';
+      document.getElementById('episodes-tbody').innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📺</div><h3>Select a drama to view episodes</h3></div></td></tr>';
+    }
+
+    async function loadEpisodes(dramaId) {
+      try {
+        const res = await api.getEpisodes(dramaId);
+        const episodes = res.data;
+        document.getElementById('ep-count').textContent = `${episodes.length} Episodes`;
+
+        const tbody = document.getElementById('episodes-tbody');
+        if (!episodes.length) {
+          tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📺</div><h3>No episodes yet</h3><p>Sync this drama\'s source to fetch episodes</p></div></td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = episodes.map(ep => {
+          const streams = ep.streams || [];
+          return `
+            <tr>
+              <td><span class="badge badge-primary">Ep ${ep.episode_number}</span></td>
+              <td style="font-weight: 500; color: var(--text-primary)">${ep.title || `Episode ${ep.episode_number}`}</td>
+              <td>
+                ${ep.thumbnail ? `<img src="${ep.thumbnail}" style="width: 80px; height: 45px; border-radius: 6px; object-fit: cover;" onerror="this.style.display='none'">` : '—'}
+              </td>
+              <td>${ep.duration || '—'}</td>
+              <td>
+                ${streams.length === 0 ? '<span class="text-muted">No streams</span>' : streams.map(s => `
+                  <div style="margin-bottom: 4px;">
+                    <span class="badge badge-secondary">${s.quality}</span>
+                    <span class="stream-link" title="${s.url}">${s.url}</span>
+                  </div>
+                `).join('')}
+              </td>
+              <td>
+                <label class="toggle">
+                  <input type="checkbox" ${ep.is_active ? 'checked' : ''} onchange="toggleEp(${ep.id}, this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </td>
+              <td>
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn btn-secondary btn-sm btn-icon" onclick='editEpisode(${JSON.stringify(ep).replace(/'/g, "&apos;")})'>✏️</button>
+                  <button class="btn btn-danger btn-sm btn-icon" onclick="deleteEp(${ep.id})">🗑️</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    }
+
+    async function toggleEp(id, active) {
+      try {
+        await api.updateEpisode(id, { is_active: active });
+        toast(active ? 'Episode activated' : 'Episode deactivated', 'success');
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    async function deleteEp(id) {
+      if (!confirm('Delete this episode?')) return;
+      try {
+        await api.deleteEpisode(id);
+        toast('Episode deleted', 'success');
+        if (currentDramaId) loadEpisodes(currentDramaId);
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    let currentStreams = [];
+
+    function editEpisode(ep) {
+      document.getElementById('edit-ep-id').value = ep.id;
+      document.getElementById('edit-ep-title').value = ep.title || '';
+      document.getElementById('edit-ep-desc').value = ep.description || '';
+      document.getElementById('edit-ep-thumb').value = ep.thumbnail || '';
+      currentStreams = ep.streams ? [...ep.streams] : [];
+      renderStreamsEditor();
+      openModal('edit-ep-modal');
+    }
+
+    function renderStreamsEditor() {
+      const el = document.getElementById('streams-editor');
+      el.innerHTML = currentStreams.map((s, i) => `
+        <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+          <select class="form-control" style="width: 100px;" onchange="currentStreams[${i}].quality = this.value">
+            ${['360p','480p','720p','1080p'].map(q => `<option ${s.quality === q ? 'selected' : ''}>${q}</option>`).join('')}
+          </select>
+          <input type="url" class="form-control" value="${s.url || ''}" placeholder="Stream URL" oninput="currentStreams[${i}].url = this.value" style="flex: 1;">
+          <button type="button" class="btn btn-danger btn-sm btn-icon" onclick="removeStream(${i})">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function addStreamRow() {
+      currentStreams.push({ quality: '720p', url: '' });
+      renderStreamsEditor();
+    }
+
+    function removeStream(i) {
+      currentStreams.splice(i, 1);
+      renderStreamsEditor();
+    }
+
+    document.getElementById('edit-ep-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('edit-ep-id').value;
+      try {
+        await api.updateEpisode(id, {
+          title: document.getElementById('edit-ep-title').value,
+          description: document.getElementById('edit-ep-desc').value,
+          thumbnail: document.getElementById('edit-ep-thumb').value,
+          streams: currentStreams.filter(s => s.url),
+        });
+        toast('Episode updated!', 'success');
+        closeModal('edit-ep-modal');
+        if (currentDramaId) loadEpisodes(currentDramaId);
+      } catch (err) { toast(err.message, 'error'); }
+    });
+
+    // Auto-load if drama ID is in URL
+    if (dramaIdFromUrl) {
+      api.getDrama(dramaIdFromUrl).then(res => {
+        const d = res.data;
+        selectDrama(d.id, d.title, d.poster, d.total_episodes);
+      }).catch(() => {});
+    }
+  </script>
+</body>
+</html>
